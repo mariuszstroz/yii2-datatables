@@ -28,6 +28,12 @@ class DataTableAction extends Action
     public $query;
 
     /**
+     * Define GET or POST request type.
+     * @var string
+     */
+    public $requestType = 'GET';
+
+    /**
      * Applies ordering according to params from DataTable
      * Signature is following:
      * function ($query, $columns, $order)
@@ -55,20 +61,27 @@ class DataTableAction extends Action
         /** @var ActiveQuery $originalQuery */
         $originalQuery = $this->query;
         $filterQuery = clone $originalQuery;
-        $draw = Yii::$app->request->getQueryParam('draw');
+
+        if ($this->requestType == 'POST') {
+            $FuncName = "getBodyParam";
+        } else {
+            $FuncName = "getQueryParam";
+        }
+
+        $draw = Yii::$app->request->{$FuncName}('draw');
         $filterQuery->where = null;
-        $search = Yii::$app->request->getQueryParam('search', ['value' => null, 'regex' => false]);
-        $columns = Yii::$app->request->getQueryParam('columns', []);
-        $order = Yii::$app->request->getQueryParam('order', []);
+        $search = Yii::$app->request->{$FuncName}('search', ['value' => null, 'regex' => false]);
+        $columns = Yii::$app->request->{$FuncName}('columns', []);
+        $order = Yii::$app->request->{$FuncName}('order', []);
         $filterQuery = $this->applyFilter($filterQuery, $columns, $search);
         $filterQuery = $this->applyOrder($filterQuery, $columns, $order);
         if (!empty($originalQuery->where)) {
             $filterQuery->andWhere($originalQuery->where);
         }
         $filterQuery
-            ->offset(Yii::$app->request->getQueryParam('start', 0))
-            ->limit(Yii::$app->request->getQueryParam('length', -1));
-        $dataProvider = new ActiveDataProvider(['query' => $filterQuery, 'pagination' => ['pageSize' => Yii::$app->request->getQueryParam('length', 10)]]);
+            ->offset(Yii::$app->request->{$FuncName}('start', 0))
+            ->limit(Yii::$app->request->{$FuncName}('length', -1));
+        $dataProvider = new ActiveDataProvider(['query' => $filterQuery, 'pagination' => ['pageSize' => (int)Yii::$app->request->{$FuncName}('length', 10)]]);
         Yii::$app->response->format = Response::FORMAT_JSON;
         try {
             $response = [
