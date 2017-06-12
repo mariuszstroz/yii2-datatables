@@ -40,6 +40,15 @@ class DataTableAction extends Action
      */
     public $query;
 
+
+    /**
+     * Define extra columns for search filter (mostly used in join tables)
+     * Schema [ alias => column ]
+     * [ 'country_name' => 'country.name' ]
+     * @var string
+     */
+    public $extraSearchColumns = [];
+
     /**
      * Applies ordering according to params from DataTable
      * Signature is following:
@@ -154,6 +163,10 @@ class DataTableAction extends Action
                 $value = empty($search['value']) ? $column['search']['value'] : $search['value'];
                 $query->orFilterWhere(['like', $column['data'], $value]);
             }
+            if ($column['searchable'] == 'true' && array_key_exists($column['data'], $this->extraSearchColumns) !== false ) {
+                $value = empty($search['value']) ? $column['search']['value'] : $search['value'];
+                $query->orFilterWhere(['like', $this->extraSearchColumns[$column['data']], $value]);
+            }
         }
         return $query;
     }
@@ -206,4 +219,4 @@ class DataTableAction extends Action
 
         return $response;
     }
-} 
+}
